@@ -51,6 +51,10 @@ def read_mutation(tables, mutation_file):
 def read_ARG(node_file, branch_file, mutation_file):
     tables = read_ts(node_file, branch_file)
     read_mutation(tables, mutation_file)
+    tables.sort()
+    tables.build_index()
+    tables.compute_mutation_parents()
+    tables.compute_mutation_times()
     ts = tables.tree_sequence()
     return ts
 
