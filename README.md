@@ -11,6 +11,8 @@ Here we maintained the version which is under active development, but you can st
 
 If you want to compile the source files, then C++17 and cmake are required. Otherwise you can also used the pre-compiled binary files on various platforms. 
 
+The analysis on the inferred ARGs will be performed using [tskit](https://tskit.dev/tskit/docs/stable/introduction.html), and you can find the installation instructions using the link. **Note that now we support the compability with tskit version 1.0 onward, which requires python 3.10 and above (from version 0.1.9).** 
+
 ## Installations
 
 The easiser way is to directory go to the folder `releases/` and download one of the versions which work for your working platform (Linux/MacOS_Intel/MacOS_M1). After downloading, you can decompress it using:
@@ -102,44 +104,38 @@ Each row in the output file stands for all the pairwise coalescence times betwee
 
 ### Running SINGER for a long chromosome
 
-Often people would like to run the ARG inference method for the entire chromosome (or even the entire genome), and we have provided a python script `parallel_singer` to facilitate you to this end. It automatically handles parallelization for you and runs SINGER multi-threaded. 
+Often people would like to run the ARG inference method for the entire chromosome (or even the entire genome). We recommend running ```singer_master``` for continous segments (such as 5Mb) and then use the following tool to merge them together. 
 
 ```
-parallel_singer -Ne 2e4 -m 1.2e-8 
-```
-This script will:
-
-1. Cut the genome into windows (default at 1Mb)
-2. Remove the windows of unsequenced regions (<5 variants in the window)
-3. Automatically parallelize running SINGER on these windows
-4. Convert the output to `.trees` files with `tskit` format
-
-
-### Running SINGER for a series of regions
-
-[this tool is still under development, and will be available soon]
-
-Sometimes it is of interest to only look at certain regions on the genome (e.g. selection signals), and we have provided support for this with the python script `multiple_windows_singer.py`. It will automatically parallelize running SINGER on the regions you specify with a given `.bed` file. 
-
-**Tips:** we recommend having windows not too small nor too big. A window containing 500-5000 SNPs would be ideal.
-
-```
-python multiple_windows_singer.py
+path_to_singer/singer_master -m 1.25e-8 -vcf prefix_of_vcf_file -output prefix_of_output_file_0 -start 0 -end 5e6
+path_to_singer/singer_master -m 1.25e-8 -vcf prefix_of_vcf_file -output prefix_of_output_file_1 -start 5e6 -end 10e6
+path_to_singer/singer_master -m 1.25e-8 -vcf prefix_of_vcf_file -output prefix_of_output_file_2 -start 10e6 -end 15e6
+......
 ```
 
-This script will:
+```
+python merge_ARG.py --file_table sub_file_table_file --output merged_ARG_filename
+```
 
-1. Index the vcf file for these specified windows
-2. Automatically parallelize running SINGER on these windows
-3. Convert the output to `.trees` files with `tskit` format
+The ```sub_file_table_file``` specifies how the inferred ARG should be pieced together with an example like this:
 
-## FAQ
+```
+prefix_of_output_file_i_nodes_0.txt prefix_of_output_file_i_branches_0.txt prefix_of_output_file_i_muts_0.txt 0 
+prefix_of_output_file_i_nodes_1.txt prefix_of_output_file_i_branches_1.txt prefix_of_output_file_i_muts_1.txt 5000000
+prefix_of_output_file_i_nodes_2.txt prefix_of_output_file_i_branches_2.txt prefix_of_output_file_i_muts_2.txt 10000000
+......
+```
 
-1. By far the most common bug is caused by not choosing the **-Ne, -m** parameter so that you roughly have $\pi=4\cdot N_e \cdot m\$. For example, some bioinformatics pipeline can remove polymorphic sites significantly. You'll have to either change (effective) mutation rate or effective population size. Another common case is centromeres with almost no sequenced sites, please make sure not to include such regions in SINGER;
-   
+where ```i``` is the index of the ARG sample, and the index after that is the index of the genomic windows on which parallization is performed. Note that the genomic windows do not have to be all adjacent. For example, when there is a centromeric region in the middle of the chromosome, it can be skipped by only selecting windows in the left and right arms. This will be reflected in the last column of the ```sub_file_table_file```, which indicates the starting position of each genomic window. 
+
+By doing the merging operation, you will get the ARG samples with the length of the entire chromosome rather than for each individual genomic window, which might be convenient in certain scenarios. 
+
+
 
 ## Suggestions from developer
 
 1. As a Bayesian sampling method, SINGER works best when you sample some ARGs from posterior, **only using one single sample is NOT ideal**. To this point, we highly encourage specifying **-n, -thin** flags. You can find how we run SINGER on real datasets on:
 2. It is of importance to carefully choose the parameters, such as -Ne, -m, and -ratio. We recommend first choosing the mutation rate m, and then based on average pairwise diversity \($\pi=4\cdot N_e \cdot m\$), you can decide the Ne parameter. If you are not super sure about the recombination rate, you can use the default ratio of 1. 
 3. Unfortunately for now we only support phased, high-quality genomes, and polymorphic sites with missingness will be excluded. We are working on incorporating missingness and unphased data in the near future. ARGweaver has better support in these regards.
+4. By far **the most frequent bug reported** comes from using full name under the ```-vcf``` flag, note that it only accepts the prefix of the vcf file without ```.vcf```. For example, ```-vcf human_chr1.vcf``` is illegal because it will look for a file called ```human_chr1.vcf.vcf```.
+5. **The second most frequent bug reported** is caused by running SINGER on essentially a region with no or very low sequencing data, such as centromeric regions. SINGER cannot infer the ARG when there is no data present, and will likely bug out due to underflow issues. 
