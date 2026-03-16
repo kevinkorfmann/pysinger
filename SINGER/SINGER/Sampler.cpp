@@ -52,6 +52,86 @@ void Sampler::set_num_samples(int n) {
     num_samples = n;
 }
 
+void Sampler::naive_read_vcf_haploid(string prefix, double start_pos, double end_pos) {
+    string vcf_file = prefix + ".vcf";
+    ifstream file(vcf_file);
+    string line;
+    int num_individuals = 0;
+    int prev_pos = -1;
+    vector<Node_ptr> nodes = {};
+    int valid_mutation = 0;
+    int removed_mutation = 0;
+    vector<double> genotypes = {};
+    while (getline(file, line)) {
+        if (line.substr(0, 6) == "#CHROM") {
+            istringstream iss(line);
+            vector<string> fields;
+            string field;
+            while (iss >> field) {
+                fields.push_back(field);
+            }
+            num_individuals = (int) fields.size() - 9;
+            nodes.resize(num_individuals);
+            for (int i = 0; i < num_individuals; i++) {
+                nodes[i] = new_node(0.0);
+                nodes[i]->set_index(i);
+                sample_nodes.insert(nodes[i]);
+            }
+            genotypes.resize(num_individuals);
+            continue;
+        } else if (line[0] == '#') {
+            continue; // skip these header lines
+        }
+        istringstream iss(line);
+        string chrom, id, ref, alt, qual, filter, info, format, genotype;
+        int pos;
+        iss >> chrom >> pos >> id >> ref >> alt >> qual >> filter >> info >> format;
+        
+        if (pos < start_pos) {continue;}
+        if (pos > end_pos) {break;}
+        if (pos == prev_pos) {continue;} // skip multi-allelic sites
+        if (ref.size() > 1 or alt.size() > 1) {
+            removed_mutation += 1;
+            continue;
+        } // skip multi-allelic sites or structural variant
+        
+        streampos old_pos = file.tellg();
+        string next_line;
+        if (getline(file, next_line)) {
+            istringstream next_iss(next_line);
+            string next_chrom;
+            int next_pos;
+            next_iss >> next_chrom >> next_pos;
+            if (next_pos == pos) {
+                removed_mutation += 1;
+                prev_pos = pos;
+                continue;
+            }
+            file.seekg(old_pos);
+        }
+        int individual_index = 0;
+        while (iss >> genotype) {
+            genotypes[individual_index] = (genotype[0] == '1');
+            individual_index += 1;
+        }
+        int genotype_sum = accumulate(genotypes.begin(), genotypes.end(), 0.0);
+        if (genotype_sum >= 1 and genotype_sum < genotypes.size()) {
+            valid_mutation += 1;
+            for (int i = 0; i < genotypes.size(); i++) {
+                if (genotypes[i] == 1) {
+                    nodes[i]->add_mutation(pos - start_pos);
+                }
+            }
+        }
+    }
+    num_samples = (int) sample_nodes.size();
+    ordered_sample_nodes = vector<Node_ptr>(sample_nodes.begin(), sample_nodes.end());
+    shuffle(ordered_sample_nodes.begin(), ordered_sample_nodes.end(), random_engine);
+    sequence_length = end_pos - start_pos;
+    cout << "valid mutations: " << valid_mutation << endl;
+    cout << "removed mutations: " << removed_mutation << endl;
+}
+
 void Sampler::naive_read_vcf(string prefix, double start_pos, double end_pos) {
     string vcf_file = prefix + ".vcf";
     ifstream file(vcf_file);

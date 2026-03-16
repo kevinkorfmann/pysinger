@@ -69,6 +69,8 @@ public:
     
     void set_num_samples(int n);
     
+    void naive_read_vcf_haploid(string prefix, double start_pos, double end_pos);
+    
     void naive_read_vcf(string prefix, double start_pos, double end_pos);
     
     void guide_read_vcf(string prefix, double start, double end);

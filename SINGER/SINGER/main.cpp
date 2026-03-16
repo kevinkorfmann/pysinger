@@ -22,6 +22,7 @@ int main(int argc, const char * argv[]) {
     double polar = 0.5;
     double epsilon_hmm = 0.1;
     double epsilon_psmc = 0.05;
+    int ploidy = 2;
     int seed = 42;
     for (int i = 1; i < argc; ++i) {
         string arg = argv[i];
@@ -219,6 +220,24 @@ int main(int argc, const char * argv[]) {
                 exit(1);
             }
         }
+        else if (arg == "-ploidy") {
+            if (i + 1 >= argc || argv[i+1][0] == '-') {
+                cerr << "Error: -ploidy flag expects a value (1 or 2)." << endl;
+                exit(1);
+            }
+
+            try {
+                ploidy = stoi(argv[++i]);
+            } catch (const invalid_argument&) {
+                cerr << "Error: -ploidy expects 1 or 2." << endl;
+                exit(1);
+            }
+
+            if (ploidy != 1 && ploidy != 2) {
+                cerr << "Error: -ploidy must be 1 or 2." << endl;
+                exit(1);
+            }
+        }
         else {
             cerr << "Error: Unknown flag. " << arg << endl;
             exit(1);
@@ -280,7 +299,11 @@ int main(int argc, const char * argv[]) {
         sampler.debug_resume_internal_sample(num_iters, spacing);
         return 0;
     }
-    sampler.load_vcf(input_filename, start_pos, end_pos);
+    if (ploidy == 1) {
+        sampler.naive_read_vcf_haploid(input_filename, start_pos, end_pos);
+    } else {
+        sampler.load_vcf(input_filename, start_pos, end_pos);
+    }
     sampler.iterative_start();
     sampler.internal_sample(num_iters, spacing);
     return 0;
