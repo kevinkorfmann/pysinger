@@ -2,9 +2,9 @@
 import math
 import pytest
 
-from pysingerarg.data.node import Node
-from pysingerarg.data.branch import Branch
-from pysingerarg.hmm.coalescent import CoalescentCalculator
+from pysinger.data.node import Node
+from pysinger.data.branch import Branch
+from pysinger.hmm.coalescent import CoalescentCalculator
 
 
 def make_branch(t_lower: float, t_upper: float) -> Branch:

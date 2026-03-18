@@ -1,14 +1,14 @@
 """
-Shared fixtures for pysingerarg tests.
+Shared fixtures for pysinger tests.
 """
 import math
 import pytest
 
-from pysingerarg.data.node import Node
-from pysingerarg.data.branch import Branch
-from pysingerarg.data.tree import Tree
-from pysingerarg.data.recombination import Recombination
-from pysingerarg.data.arg import ARG
+from pysinger.data.node import Node
+from pysinger.data.branch import Branch
+from pysinger.data.tree import Tree
+from pysinger.data.recombination import Recombination
+from pysinger.data.arg import ARG
 
 
 @pytest.fixture

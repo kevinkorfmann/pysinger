@@ -2,7 +2,7 @@
 import math
 import pytest
 
-from pysingerarg.sampler import Sampler
+from pysinger.sampler import Sampler
 
 
 class TestSamplerIterativeStart:

@@ -1,5 +1,5 @@
 """
-tskit writer — convert a pysingerarg ARG to a tskit TreeSequence.
+tskit writer — convert a pysinger ARG to a tskit TreeSequence.
 
 Mirrors the conceptual output of SINGER's write() method, but produces
 a tskit.TreeSequence that can be analysed with the tskit/msprime ecosystem.
@@ -30,7 +30,7 @@ def arg_to_tskit(arg: "ARG", Ne: float = 1.0):  # -> tskit.TreeSequence
     Parameters
     ----------
     arg : ARG
-        The pysingerarg ARG object.
+        The pysinger ARG object.
     Ne : float
         Effective population size used to convert coalescent time units
         to generations (t_generations = t_coalescent * 2 * Ne).

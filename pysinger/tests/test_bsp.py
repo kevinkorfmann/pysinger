@@ -2,10 +2,10 @@
 import math
 import pytest
 
-from pysingerarg.data.node import Node
-from pysingerarg.data.branch import Branch
-from pysingerarg.hmm.bsp import BSP
-from pysingerarg.hmm.emission import BinaryEmission
+from pysinger.data.node import Node
+from pysinger.data.branch import Branch
+from pysinger.hmm.bsp import BSP
+from pysinger.hmm.emission import BinaryEmission
 
 
 def make_two_branch_set():

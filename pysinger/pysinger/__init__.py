@@ -1,5 +1,5 @@
 """
-pysingerarg — pure-Python replica of the SINGER Bayesian ARG sampler.
+pysinger — pure-Python replica of the SINGER Bayesian ARG sampler.
 
 Package layout mirrors the dependency order of the C++ codebase:
 

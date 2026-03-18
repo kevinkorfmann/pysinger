@@ -1,5 +1,5 @@
 """
-Sampler — top-level MCMC sampler for pysingerarg.
+Sampler — top-level MCMC sampler for pysinger.
 
 Mirrors Sampler.cpp / Sampler.hpp.
 
@@ -93,7 +93,7 @@ class Sampler:
         self._rng = np.random.default_rng(seed)
         # Reset the global node counter so that results are reproducible
         # across multiple Sampler instances in the same Python session.
-        import pysingerarg.hmm.tsp as _tsp_mod
+        import pysinger.hmm.tsp as _tsp_mod
         _tsp_mod._counter = 0
 
     # ------------------------------------------------------------------

@@ -1,7 +1,7 @@
 """Tests for VCF reader."""
 import pytest
 
-from pysingerarg.io.vcf_reader import read_vcf_phased, read_vcf_haploid
+from pysinger.io.vcf_reader import read_vcf_phased, read_vcf_haploid
 
 
 class TestReadVcfPhased:

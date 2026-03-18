@@ -2,10 +2,10 @@
 import math
 import pytest
 
-from pysingerarg.data.node import Node
-from pysingerarg.data.branch import Branch
-from pysingerarg.data.tree import Tree
-from pysingerarg.reconstruction.fitch import FitchReconstruction
+from pysinger.data.node import Node
+from pysinger.data.branch import Branch
+from pysinger.data.tree import Tree
+from pysinger.reconstruction.fitch import FitchReconstruction
 
 
 def build_tree_and_nodes():
