@@ -8,6 +8,7 @@ A pure-Python rewrite of the [SINGER](https://github.com/popgenmethods/SINGER) B
 :maxdepth: 2
 
 overview
+implementation_guide
 theory
 data_structures
 hmm
