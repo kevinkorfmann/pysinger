@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pysingerarg"
+version = "0.1.0"
+description = "Pure-Python readable replica of SINGER Bayesian ARG sampler"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "numpy>=1.24",
+    "sortedcontainers>=2.4",
+    "tskit>=0.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov"]
+vcf = ["cyvcf2>=0.30"]
+demo = [
+    "stdpopsim>=0.2",
+    "msprime>=1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pysingerarg*"]
