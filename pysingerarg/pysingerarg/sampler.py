@@ -73,6 +73,8 @@ class Sampler:
         self.ordered_sample_nodes: List[Node] = []
 
         self.sample_index: int = 0
+        self.last_scale: float = 1.0
+        self.last_arg_length: float = 0.0
 
         # Reproducible RNG
         self._rng = np.random.default_rng()
@@ -160,16 +162,30 @@ class Sampler:
     # Iterative initialisation
     # ------------------------------------------------------------------
 
-    def iterative_start(self) -> None:
+    def iterative_start(self, max_retries: int = 5) -> None:
         """Thread all sample nodes one by one to build an initial ARG.
 
         Mirrors Sampler::iterative_start.
+
+        If a threading step fails (e.g. HMM underflow on long sequences),
+        the entire build is retried with a fresh RNG state up to
+        *max_retries* times.
         """
-        self._build_singleton_arg()
-        for node in self.ordered_sample_nodes[1:]:
-            threader = self._make_threader()
-            threader.thread(self.arg, node)
-        self._rescale()
+        for attempt in range(max_retries):
+            try:
+                self._build_singleton_arg()
+                for node in self.ordered_sample_nodes[1:]:
+                    threader = self._make_threader()
+                    threader.thread(self.arg, node)
+                self._rescale()
+                return  # success
+            except RuntimeError:
+                # Bump the RNG so the next attempt explores different paths
+                self._rng = np.random.default_rng(self._seed + attempt + 1)
+        raise RuntimeError(
+            f"iterative_start failed after {max_retries} attempts "
+            f"(sequence_length={self.sequence_length})"
+        )
 
     # ------------------------------------------------------------------
     # MCMC sampling
@@ -188,20 +204,36 @@ class Sampler:
             while updated_length < spacing * self.arg.sequence_length:
                 threader = self._make_threader()
                 cut_point = self.arg.sample_internal_cut()
-                threader.internal_rethread(self.arg, cut_point)
+                try:
+                    threader.internal_rethread(self.arg, cut_point)
+                except Exception:
+                    # If arg.remove() already ran (joining_branches is populated),
+                    # restore the original lineage before clearing state.
+                    if self.arg.joining_branches:
+                        try:
+                            self.arg.add(
+                                self.arg.joining_branches,
+                                self.arg.removed_branches,
+                            )
+                            self.arg.approx_sample_recombinations()
+                        except Exception:
+                            pass  # best effort; clear bookkeeping either way
+                    self.arg.clear_remove_info()
+                    break
                 updated_length += (
                     self.arg.coordinates[threader.end_index]
                     - self.arg.coordinates[threader.start_index]
                 )
                 self.arg.clear_remove_info()
-            self._rescale()
+            self.last_arg_length = self.arg.get_arg_length()
+            self.last_scale = self._rescale()
             self.sample_index += 1
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _rescale(self) -> None:
+    def _rescale(self) -> float:
         """Rescale ARG branch lengths to be consistent with mutation rate.
 
         Minimal version: compute a global scale factor from observed vs
@@ -209,7 +241,7 @@ class Sampler:
         Mirrors Sampler::rescale (which calls Scaler::rescale).
         """
         if self.arg is None or self.mut_rate <= 0:
-            return
+            return 1.0
         # Count total observed mutations from sample nodes.
         # (arg.node_set is not populated during threading; sample_nodes are.)
         # Use unique segregating site positions so each mutation event is
@@ -221,16 +253,17 @@ class Sampler:
             if pos >= 0
         })
         if total_obs == 0:
-            return
+            return 1.0
         # Expected = mut_rate * total_branch_length
         total_branch = self.arg.get_arg_length()
         if total_branch <= 0:
-            return
-        # self.mut_rate = mu * Ne, but 1 coalescent unit = 2*Ne generations,
-        # so expected mutations per bp per coalescent-unit = mu * 2 * Ne.
-        expected = self.mut_rate * 2 * total_branch
+            return 1.0
+        # In SINGER's convention, 1 coalescent time unit = Ne generations
+        # (haploid coalescent: rate = 1/Ne per gen → 1 unit = Ne gen).
+        # self.mut_rate = mu * Ne = mutation probability per bp per time unit.
+        expected = self.mut_rate * total_branch
         if expected <= 0:
-            return
+            return 1.0
         scale = total_obs / expected
         # Collect all internal nodes by walking the ARG tree sequence.
         # Nodes that appear as parents in any tree are internal (non-leaf) nodes.
@@ -251,3 +284,9 @@ class Sampler:
                         internal_nodes.append(n)
         for n in internal_nodes:
             n.time *= scale
+        # Also rescale recombination start_times, which are stored as floats
+        # (not node references) and must stay consistent with node times.
+        for pos, r in self.arg.recombinations.items():
+            if 0 < pos < self.arg.sequence_length and r.start_time > 0:
+                r.start_time *= scale
+        return scale

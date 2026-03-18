@@ -11,6 +11,7 @@ dependencies = [
     "matplotlib>=3.10.8",
     "numpy>=1.24",
     "sortedcontainers>=2.4",
+    "tqdm>=4.67.3",
     "tskit>=0.5",
 ]
 
@@ -25,3 +26,8 @@ demo = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pysingerarg*"]
+
+[dependency-groups]
+dev = [
+    "nbconvert>=7.17.0",
+]
