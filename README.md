@@ -132,10 +132,48 @@ By doing the merging operation, you will get the ARG samples with the length of 
 
 
 
+## pysinger — pure-Python implementation
+
+The `pysinger/` directory contains a readable pure-Python replica of the SINGER algorithm. It mirrors the C++ BSP + TSP threading and MCMC sampling pipeline, and can export inferred ARGs to `tskit.TreeSequence` for downstream analysis.
+
+### Quick start
+
+```bash
+cd pysinger
+uv sync --extra demo   # or: pip install -e ".[demo]"
+```
+
+```python
+from pysinger import Sampler
+from pysinger.io.tskit_writer import arg_to_tskit
+
+sampler = Sampler(Ne=10000, recomb_rate=1e-8, mut_rate=1e-8)
+sampler.set_seed(42)
+sampler.load_vcf("data.vcf", start=0, end=1_000_000)
+sampler.iterative_start()
+sampler.internal_sample(num_iters=1000, spacing=1)
+ts = arg_to_tskit(sampler.arg, Ne=10000)
+```
+
+See `pysinger/demo.ipynb` for a full walkthrough using a stdpopsim zigzag simulation with convergence diagnostics and validation plots.
+
+### Package structure
+
+```
+pysinger/pysinger/
+├── sampler.py           # Top-level MCMC sampler
+├── data/                # ARG, Node, Branch, Tree, Recombination
+├── hmm/                 # BSP (branch HMM), TSP (time HMM), emissions
+├── mcmc/                # Threader (BSP + TSP threading)
+├── io/                  # VCF reader, tskit writer
+├── rates/               # Piecewise recombination/mutation rate maps
+└── reconstruction/      # Fitch parsimony for ancestral states
+```
+
 ## Suggestions from developer
 
 1. As a Bayesian sampling method, SINGER works best when you sample some ARGs from posterior, **only using one single sample is NOT ideal**. To this point, we highly encourage specifying **-n, -thin** flags. You can find how we run SINGER on real datasets on:
-2. It is of importance to carefully choose the parameters, such as -Ne, -m, and -ratio. We recommend first choosing the mutation rate m, and then based on average pairwise diversity \($\pi=4\cdot N_e \cdot m\$), you can decide the Ne parameter. If you are not super sure about the recombination rate, you can use the default ratio of 1. 
+2. It is of importance to carefully choose the parameters, such as -Ne, -m, and -ratio. We recommend first choosing the mutation rate m, and then based on average pairwise diversity \($\pi=4\cdot N_e \cdot m\$), you can decide the Ne parameter. If you are not super sure about the recombination rate, you can use the default ratio of 1.
 3. Unfortunately for now we only support phased, high-quality genomes, and polymorphic sites with missingness will be excluded. We are working on incorporating missingness and unphased data in the near future. ARGweaver has better support in these regards.
 4. By far **the most frequent bug reported** comes from using full name under the ```-vcf``` flag, note that it only accepts the prefix of the vcf file without ```.vcf```. For example, ```-vcf human_chr1.vcf``` is illegal because it will look for a file called ```human_chr1.vcf.vcf```.
-5. **The second most frequent bug reported** is caused by running SINGER on essentially a region with no or very low sequencing data, such as centromeric regions. SINGER cannot infer the ARG when there is no data present, and will likely bug out due to underflow issues. 
+5. **The second most frequent bug reported** is caused by running SINGER on essentially a region with no or very low sequencing data, such as centromeric regions. SINGER cannot infer the ARG when there is no data present, and will likely bug out due to underflow issues.
