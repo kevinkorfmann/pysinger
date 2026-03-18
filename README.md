@@ -1,11 +1,10 @@
 ![Logo](SINGER.png)
 # SINGER
-SINGER stands for **S**ampling and **IN**ference of **GE**nealogies with **R**ecombination, and it is a Bayesian method to do posterior sampling of Ancestral Recombination Graph under Sequentially Markovian Coalescent. SINGER works by iterative threading one haplotype to the partially-built ARG, until the ARG for all haplotypes have been built. After initialization, MCMC will be performed to update the ARG to explore the posterior distribution. For a full description and cite our method, you can check: [Deng, Yun, Rasmus Nielsen, and Yun S. Song. "Robust and accurate bayesian inference of genome-wide genealogies for large samples." bioRxiv (2024): 2024-03.](https://www.biorxiv.org/content/10.1101/2024.03.16.585351v1.supplementary-material)
+SINGER stands for **S**ampling and **IN**ference of **GE**nealogies with **R**ecombination, and it is a Bayesian method to do posterior sampling of Ancestral Recombination Graph under Sequentially Markovian Coalescent. SINGER works by iterative threading one haplotype to the partially-built ARG, until the ARG for all haplotypes have been built. After initialization, MCMC will be performed to update the ARG to explore the posterior distribution.
 
+> Deng, Y., Nielsen, R. & Song, Y.S. Robust and accurate Bayesian inference of genome-wide genealogies for hundreds of genomes. *Nature Genetics* **57**, 2124--2135 (2025). [https://doi.org/10.1038/s41588-025-02317-9](https://doi.org/10.1038/s41588-025-02317-9)
 
-Here we maintained the version which is under active development, but you can still direclty download the binary files for all past versions. 
-
-[We are temporarily providing beta versions of it, the official versions will be released when the preprint has been accepted for publication. You are welcome to use it, and submit bug reports at GitHub Issues. ]
+Here we maintain the version under active development. You can also directly download pre-compiled binary files for past versions. Bug reports are welcome at GitHub Issues.
 
 ## Requirements
 
@@ -132,9 +131,9 @@ By doing the merging operation, you will get the ARG samples with the length of 
 
 
 
-## pysinger — pure-Python implementation
+## pysinger — Python rewrite
 
-The `pysinger/` directory contains a readable pure-Python replica of the SINGER algorithm. It mirrors the C++ BSP + TSP threading and MCMC sampling pipeline, and can export inferred ARGs to `tskit.TreeSequence` for downstream analysis.
+The `pysinger/` directory contains a pure-Python rewrite of the SINGER C++ codebase. It reimplements the full BSP + TSP threading and MCMC sampling pipeline in readable Python, and can export inferred ARGs directly to `tskit.TreeSequence` for downstream analysis.
 
 ### Quick start
 
