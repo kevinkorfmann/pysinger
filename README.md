@@ -137,9 +137,14 @@ The `pysinger/` directory contains a pure-Python rewrite of the SINGER C++ codeb
 
 ### Quick start
 
+Install with [uv](https://docs.astral.sh/uv/) (recommended) or pip:
+
 ```bash
 cd pysinger
-uv sync --extra demo   # or: pip install -e ".[demo]"
+uv sync --extra demo          # creates .venv and installs all deps
+# or without uv:
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[demo]"
 ```
 
 ```python
