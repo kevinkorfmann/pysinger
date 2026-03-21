@@ -16,7 +16,7 @@ This project was set up mainly as an **educational resource for myself** to unde
 :maxdepth: 2
 
 overview
-implementation_guide
+build_singer_yourself
 theory
 data_structures
 hmm
